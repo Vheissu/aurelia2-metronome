@@ -1,3 +1,4 @@
+import { inject, IPlatform } from 'aurelia';
 import { observable } from '@aurelia/runtime-html';
 
 // @ts-expect-error
@@ -6,6 +7,7 @@ import click1 from './click1.wav';
 // @ts-expect-error
 import click2 from './click2.wav';
 
+@inject(IPlatform)
 export class MyApp {
   @observable() private bpm = 80;
   private playing = false;
@@ -16,13 +18,19 @@ export class MyApp {
   private click1 = new Audio(click1);
   private click2 = new Audio(click2);
 
-  bpmChanged() {
-    if (this.playing) {
-      clearInterval(this.timer);
-      this.timer = setInterval(this.playClick, (60 / this.bpm) * 1000);
+  constructor(private platform: IPlatform) {
 
-      this.count = 0;
-    }
+  }
+
+  bpmChanged() {
+    this.platform.queueMicrotask(() => {
+      if (this.playing) {
+        clearInterval(this.timer);
+        this.timer = setInterval(() => this.playClick(), (60 / this.bpm) * 1000);
+  
+        this.count = 0;
+      }
+    });
   }
 
   private startStop() {
@@ -31,7 +39,7 @@ export class MyApp {
 
       this.playing = false;
     } else {
-      this.timer = setInterval(this.playClick, (60 / this.bpm) * 1000);
+      this.timer = setInterval(() => this.playClick(), (60 / this.bpm) * 1000);
       this.count = 0;
       this.playing = true;
 
